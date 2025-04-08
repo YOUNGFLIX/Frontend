@@ -22,6 +22,7 @@ export type Movie = {
     total_results: number;
   };
 
+
   export type MovieDetail = {
     title: string;
     tagline: string;
