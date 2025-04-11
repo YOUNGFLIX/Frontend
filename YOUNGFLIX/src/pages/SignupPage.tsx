@@ -4,8 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import useCustomFetch from "../hooks/useCustomFetch";
-import { postSignup as apiPostSignup } from "../apis/auth";
+import { postSignup as apiPostSignup, checkEmail } from "../apis/auth";
 import { MovieResponse } from "../types/movie";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import BackButton from "../components/Button/ButtonStyle";
+import BackgroundImage from "../components/BackgroundImage";
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
 
@@ -35,16 +39,6 @@ export const SignupPage = () => {
   const { data } = useCustomFetch<MovieResponse>(
     "https://api.themoviedb.org/3/movie/popular?language=en-US&page=1"
   );
-
-  const backgroundImage = useMemo(() => {
-    return (
-      (data?.results || [])
-        .filter((movie) => movie.backdrop_path)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 1)
-        .map((movie) => `${IMAGE_BASE_URL}${movie.backdrop_path}`)[0] || ""
-    );
-  }, [data]);
 
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -78,9 +72,23 @@ export const SignupPage = () => {
         ? ["name", "nickname"]
         : "nickname"
     );
-    if (valid && (step !== 2 || password === passwordCheck)) {
-      setStep(step + 1);
+
+    if (!valid || (step === 2 && password !== passwordCheck)) return;
+
+    if (step === 1 && email) {
+      try {
+        const isDuplicate = await checkEmail(email);
+        if (isDuplicate) {
+          toast.error("이미 존재하는 이메일입니다.");
+          return;
+        }
+      } catch (error) {
+        toast.error("이메일 중복 검사 중 오류가 발생했습니다.");
+        return;
+      }
     }
+
+    setStep(step + 1);
   };
 
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
@@ -125,22 +133,11 @@ export const SignupPage = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
-      {backgroundImage && (
-        <div
-          style={{ backgroundImage: `url(${backgroundImage})` }}
-          className="absolute inset-0 bg-cover bg-center blur-sm brightness-50 z-0"
-        />
-      )}
+      <BackgroundImage />
       <div className="absolute inset-0 z-10 flex items-start justify-center pt-30">
         <div className="bg-black bg-opacity-80 p-10 rounded-md shadow-md w-full max-w-md flex flex-col gap-4 text-white">
           <div className="relative text-white mb-2">
-            <button
-              onClick={() => setStep(step > 1 ? step - 1 : 1)}
-              className="absolute left-0 text-white text-2xl px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 z-20"
-              aria-label="이전 단계로"
-            >
-              ←
-            </button>
+          <BackButton onClick={() => setStep(step > 1 ? step - 1 : 1)} />
             <div className="text-center items-center text-3xl font-extrabold text-white tracking-wider drop-shadow">
               회원가입
             </div>
@@ -319,6 +316,7 @@ export const SignupPage = () => {
           )}
         </div>
       </div>
+      <ToastContainer position="top-center" autoClose={2000} />
     </div>
   );
 };

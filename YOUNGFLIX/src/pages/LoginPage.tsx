@@ -1,12 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserSigninInformation, validateSignin } from '../utils/validate';
 import useForm from '../hooks/useForm'; 
 import { useNavigate } from 'react-router-dom';
-import useCustomFetch from '../hooks/useCustomFetch';
-import { MovieResponse } from '../types/movie';
 import { postSignin } from '../apis/auth';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { LOCAL_STORAGE_KEY } from '../constants/key';
+import BackButton from '../components/Button/ButtonStyle';
+import BackgroundImage from '../components/BackgroundImage';
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -18,19 +18,6 @@ const LoginPage = () => {
         },
         validate: validateSignin,
     });
-
-    const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
-    const { data } = useCustomFetch<MovieResponse>(
-        "https://api.themoviedb.org/3/movie/popular?language=en-US&page=1"
-    );
-
-    const backgroundImages = useMemo(() => {
-        return (data?.results || [])
-            .filter((movie) => movie.backdrop_path)
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 1)
-            .map((movie) => `${IMAGE_BASE_URL}${movie.backdrop_path}`);
-    }, [data]);
 
     const handleSubmit = async () => {
         console.log(values);
@@ -48,7 +35,6 @@ const LoginPage = () => {
             alert(error?.response?.data?.message || '로그인 중 오류가 발생했습니다.');
         }
     };
-
 
     const isDisabled = Object.values(errors || {}).some((error) => error.length > 0) || Object.values(values).some((value) => value === "");
 
@@ -81,19 +67,11 @@ const LoginPage = () => {
 
     return (
         <div className="relative w-full h-screen overflow-hidden bg-black">
-            <div
-                className="absolute inset-0 bg-cover bg-center blur-sm brightness-50 z-0"
-                style={{ backgroundImage: `url(${backgroundImages[0] || ''})` }}
-            />
+            <BackgroundImage />
             <div className="flex items-start justify-center w-full h-full pt-30 relative z-10">
                 <div className="bg-black bg-opacity-80 p-10 rounded-md shadow-md w-full max-w-md flex flex-col gap-4 text-white">
                     <div className="relative flex items-center justify-center mb-4">
-                        <button
-                            className="absolute left-0 text-white text-2xl"
-                            onClick={() => navigate(-1)}
-                        >
-                            &lt;
-                        </button>
+                    <BackButton onClick={() => navigate(-1)} />
                         <h2 className="text-3xl font-bold text-white text-center">로그인</h2>
                     </div>
     
