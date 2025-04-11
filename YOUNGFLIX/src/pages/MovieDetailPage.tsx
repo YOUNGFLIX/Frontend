@@ -5,12 +5,14 @@ import { MovieDetail } from '../types/movie';
 import IsError from '../components/IsError';
 import MovieHeader from '../components/MovieHeader';
 import MoviePeopleGrid from '../components/MoviePeopleGrid';
+import MovieVideo from '../components/MovieVideo';
+import MovieStreamingProviders from '../components/MovieStreamingProviders';
 
 const MovieDetailPage = (): JSX.Element => {
   const { movieId } = useParams<{ movieId: string }>();
 
   const { data: movie, isPending, isError } = useCustomFetch<MovieDetail>(
-    `https://api.themoviedb.org/3/movie/${movieId}?language=ko-KR&append_to_response=credits`
+    `https://api.themoviedb.org/3/movie/${movieId}?language=ko-KR&append_to_response=credits,videos,watch/providers`
   );
 
   const getCastAndCrew = (movie: any) => {
@@ -44,7 +46,13 @@ const MovieDetailPage = (): JSX.Element => {
   return (
     <div className="min-h-screen bg-black text-white">
       <MovieHeader movie={movie} />
+      {Array.isArray(movie.videos?.results) && movie.videos.results.length > 0 && (
+        <MovieVideo videoKey={movie.videos.results[0].key} />
+      )}
       {peopleToShow.length > 0 && <MoviePeopleGrid people={peopleToShow} />}
+      {movie["watch/providers"]?.results?.KR?.flatrate && (
+        <MovieStreamingProviders providers={movie["watch/providers"].results.KR.flatrate} />
+      )}
     </div>
   );
 };

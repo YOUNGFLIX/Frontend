@@ -4,9 +4,13 @@ import useForm from '../hooks/useForm';
 import { useNavigate } from 'react-router-dom';
 import useCustomFetch from '../hooks/useCustomFetch';
 import { MovieResponse } from '../types/movie';
+import { postSignin } from '../apis/auth';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import { LOCAL_STORAGE_KEY } from '../constants/key';
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const { setItem } = useLocalStorage(LOCAL_STORAGE_KEY.accessToken);
     const { values, errors, touched, getInputProps } = useForm<UserSigninInformation>({
         initialValues: {
             email: "",
@@ -28,26 +32,52 @@ const LoginPage = () => {
             .map((movie) => `${IMAGE_BASE_URL}${movie.backdrop_path}`);
     }, [data]);
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         console.log(values);
+        try {
+            const response = await postSignin(values);
+            console.log("로그인 응답:", response);
+            const { accessToken, refreshToken } = response;
+            if (!accessToken) {
+                throw new Error("Access token is missing in the response.");
+            }
+            setItem(accessToken);
+            navigate('/');
+        } catch (error: any) {
+            console.error(error);
+            alert(error?.response?.data?.message || '로그인 중 오류가 발생했습니다.');
+        }
     };
 
 
     const isDisabled = Object.values(errors || {}).some((error) => error.length > 0) || Object.values(values).some((value) => value === "");
 
     useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-          if (e.key === 'Enter' && !isDisabled) {
-              handleSubmit();
-          }
-      };
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Enter') {
+                const activeElement = document.activeElement;
+                const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
 
-      window.addEventListener('keydown', handleKeyDown);
-      return () => {
-          window.removeEventListener('keydown', handleKeyDown);
-      };
-  }, [handleSubmit, isDisabled]);
-  
+                if (!isInputFocused && !isDisabled) {
+                    handleSubmit();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleSubmit, isDisabled]);
+
+    const accessToken = localStorage.getItem(LOCAL_STORAGE_KEY.accessToken);
+    if (accessToken) {
+        return (
+            <div className="flex items-center justify-center w-full h-screen bg-black text-white text-xl font-semibold">
+                이미 로그인된 상태입니다.
+            </div>
+        );
+    }
 
     return (
         <div className="relative w-full h-screen overflow-hidden bg-black">
@@ -69,7 +99,7 @@ const LoginPage = () => {
     
                     <button className="w-full py-2 border border-white rounded text-white hover:bg-white hover:text-black transition duration-200 px-4 flex items-center justify-center gap-2">
                         <img
-                            src="/src/images/google.png"
+                            src="/images/google.png"
                             alt="Google logo"
                             className="w-5 h-5 justify-start"
                         />

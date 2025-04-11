@@ -24,6 +24,7 @@ export type Movie = {
 
 
   export type MovieDetail = {
+    id: any;
     title: string;
     tagline: string;
     release_date: string;
@@ -33,8 +34,24 @@ export type Movie = {
     poster_path: string;
     backdrop_path: string;
     genres: { id: number; name: string }[];
+    videos?: {
+      results: MovieVideo[];
+    };
     credits?: {
       cast: MovieCast[];
+    };
+    reviews?: {
+      results: MovieReview[];
+    };
+    "watch/providers"?: {
+      results: {
+        [countryCode: string]: {
+          link: string;
+          flatrate?: Provider[];
+          rent?: Provider[];
+          buy?: Provider[];
+        };
+      };
     };
   };
   
@@ -45,4 +62,37 @@ export type Movie = {
     profile_path: string | null;
     character: string;
     job?: string;
+  };
+
+  export type MovieVideo = {
+    id: string;
+    iso_639_1: string;
+    iso_3166_1: string;
+    key: string;
+    name: string;
+    site: string;
+    size: number;
+    type: string;
+    official: boolean;
+    published_at: string;
+  };
+
+  export type MovieVideoResponse = {
+    id: number;
+    results: MovieVideo[];
+  };
+
+  export type MovieReview = {
+    id: string;
+    author: string;
+    content: string;
+    created_at: string;
+    url: string;
+  };
+
+  export type Provider = {
+    display_priority: number;
+    logo_path: string;
+    provider_id: number;
+    provider_name: string;
   };
