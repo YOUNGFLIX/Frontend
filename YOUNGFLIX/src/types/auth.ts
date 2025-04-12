@@ -39,3 +39,16 @@ export type ResponseMyInfoDto = CommonResponse<{
 
 //이메일 체크
 export type ResponseCheckEmail = CommonResponse<boolean>;
+
+// 이메일 인증 요청
+export type RequestVerifyCodeDto = {
+  email: string;
+  code: string;
+};
+
+export type ResponseVerifyCodeDto = CommonResponse<boolean>;
+
+// 이메일 코드 전송 요청
+export type RequestSendCodeDto = {
+  email: string;
+};

@@ -16,6 +16,7 @@ export default function MoviePage(): JSX.Element {
   }>();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     setPage(1);
   }, [category]);
   

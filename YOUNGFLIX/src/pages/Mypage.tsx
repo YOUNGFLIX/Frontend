@@ -59,12 +59,12 @@ const Mypage = () => {
 
           <div className="flex gap-4">
             <button
-              className="flex-1 bg-[#e50914] text-white py-3 rounded-md font-semibold hover:bg-[#f40612] transition"
+              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 rounded-md font-semibold shadow-md hover:from-red-700 hover:to-red-800 hover:shadow-lg transition-all duration-300"
               onClick={handleSave}
             >
               저장
             </button>
-            <button className="flex-1 border border-gray-500 text-white py-3 rounded-md font-semibold hover:bg-gray-700 transition">취소</button>
+            <button className="flex-1 border border-gray-500 text-white py-3 rounded-md font-semibold hover:bg-gray-800 hover:text-gray-200 hover:shadow-inner transition-all duration-300">취소</button>
           </div>
         </div>
       </div>
