@@ -5,7 +5,7 @@ import Footer from '../components/Footer';
 
 const HomeLayout = () => {
   const location = useLocation();
-  const isMovieDetailPage = /^\/movie\/\d+/.test(location.pathname); // 예: /movie/123
+  const isMovieDetailPage = /^\/movie\/\d+/.test(location.pathname); 
 
   return (
     <div className="bg-black min-h-screen text-white">

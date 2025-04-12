@@ -10,6 +10,9 @@ import MovieStreamingProviders from '../components/MovieStreamingProviders';
 
 const MovieDetailPage = (): JSX.Element => {
   const { movieId } = useParams<{ movieId: string }>();
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const { data: movie, isPending, isError } = useCustomFetch<MovieDetail>(
     `https://api.themoviedb.org/3/movie/${movieId}?language=ko-KR&append_to_response=credits,videos,watch/providers`

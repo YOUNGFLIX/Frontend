@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import useCustomFetch from "../hooks/useCustomFetch";
-import { postSignup as apiPostSignup, checkEmail } from "../apis/auth";
+import { postSignup as apiPostSignup, checkEmail, verifyCode, sendCode } from "../apis/auth";
 import { MovieResponse } from "../types/movie";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -26,6 +26,7 @@ const schema = z
       .max(20, { message: "비밀번호는 20자 이하이여야 합니다." }),
     name: z.string().min(1, { message: "이름을 입력해주세요." }),
     nickname: z.string().min(1, { message: "닉네임을 입력해주세요." }),
+    code: z.string().min(1, { message: "인증 코드를 입력해주세요." }),
   })
   .refine((data) => data.password === data.passwordCheck, {
     message: "비밀번호가 일치하지 않습니다.",
@@ -61,19 +62,22 @@ export const SignupPage = () => {
   const passwordCheck = watch("passwordCheck");
   const name = watch("name");
   const nickname = watch("nickname");
+  const code = watch("code");
 
   const handleNextStep = async () => {
     const valid = await trigger(
       step === 1
         ? "email"
         : step === 2
-        ? ["password", "passwordCheck"]
+        ? "code"
         : step === 3
+        ? ["password", "passwordCheck"]
+        : step === 4
         ? ["name", "nickname"]
         : "nickname"
     );
 
-    if (!valid || (step === 2 && password !== passwordCheck)) return;
+    if (!valid || (step === 3 && password !== passwordCheck)) return;
 
     if (step === 1 && email) {
       try {
@@ -82,8 +86,18 @@ export const SignupPage = () => {
           toast.error("이미 존재하는 이메일입니다.");
           return;
         }
+        await sendCode({ email });
+        toast.success("이메일로 인증 코드가 전송되었습니다.");
       } catch (error) {
         toast.error("이메일 중복 검사 중 오류가 발생했습니다.");
+        return;
+      }
+    }
+
+    if (step === 2) {
+      const isVerified = await verifyCode({ email, code });
+      if (!isVerified) {
+        toast.error("인증 코드를 다시 확인하세요.");
         return;
       }
     }
@@ -91,11 +105,21 @@ export const SignupPage = () => {
     setStep(step + 1);
   };
 
-  const onSubmit: SubmitHandler<FormFields> = async (data) => {
+  const verifyCodeAndSignup = async (data: FormFields) => {
     const { passwordCheck, ...rest } = data;
-    const response = await apiPostSignup(rest);
-    console.log(response);
-    navigate("/login");
+    try {
+      const response = await apiPostSignup(rest);
+      console.log("회원가입 응답:", response);
+      return true;
+    } catch (error) {
+      console.error("회원가입 실패:", error);
+      return false;
+    }
+  };
+
+  const onSubmit: SubmitHandler<FormFields> = async (data) => {
+    const success = await verifyCodeAndSignup(data);
+    if (success) navigate("/login");
   };
 
   const handleKeyDown = useCallback(
@@ -105,6 +129,12 @@ export const SignupPage = () => {
           handleNextStep();
         } else if (
           step === 2 &&
+          code &&
+          !errors.code
+        ) {
+          handleNextStep();
+        } else if (
+          step === 3 &&
           password &&
           passwordCheck &&
           !errors.password &&
@@ -113,7 +143,7 @@ export const SignupPage = () => {
         ) {
           handleNextStep();
         } else if (
-          step === 3 &&
+          step === 4 &&
           name &&
           nickname &&
           !errors.name &&
@@ -123,7 +153,7 @@ export const SignupPage = () => {
         }
       }
     },
-    [step, email, password, passwordCheck, name, nickname, errors]
+    [step, email, code, password, passwordCheck, name, nickname, errors]
   );
 
   useEffect(() => {
@@ -185,7 +215,29 @@ export const SignupPage = () => {
           {step === 2 && (
             <>
               <div className="text-sm font-semibold text-gray-300 tracking-wide">{email}</div>
+              <input
+                {...register("code")}
+                className={`bg-[#333] w-full p-3 text-white placeholder-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-red-600 border ${
+                  errors?.code ? "border-red-500" : "border-[#555]"
+                }`}
+                type="text"
+                placeholder="인증 코드 입력"
+              />
+              {errors?.code && (
+                <div className="text-red-500 text-sm">{errors.code.message}</div>
+              )}
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="w-full p-3 rounded font-semibold text-white bg-red-600 hover:bg-red-700"
+              >
+                다음
+              </button>
+            </>
+          )}
 
+          {step === 3 && (
+            <>
               <div className="relative w-full">
                 <input
                   {...register("password")}
@@ -249,7 +301,7 @@ export const SignupPage = () => {
             </>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
               {errors?.name && (
                 <div className="text-red-500 text-sm">{errors.name.message}</div>
